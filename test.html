@@ -1,0 +1,150 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8" />
+  <title>회원가입 + 로그인 + To-Do</title>
+  <style>
+    body { font-family: sans-serif; padding: 2rem; }
+    input, button { margin: 0.5rem 0; display: block; }
+    ul { padding-left: 1.2rem; }
+    #todo-app, #login-form, #register-form { margin-bottom: 2rem; }
+  </style>
+</head>
+<body>
+
+  <!-- 회원가입 폼 -->
+  <div id="register-form">
+    <h2>회원가입</h2>
+    <input type="text" id="reg-nickname" placeholder="닉네임" />
+    <input type="text" id="reg-username" placeholder="아이디" />
+    <input type="password" id="reg-password" placeholder="비밀번호" />
+    <button onclick="register()">회원가입</button>
+  </div>
+
+  <!-- 로그인 폼 -->
+  <div id="login-form">
+    <h2>로그인</h2>
+    <input type="text" id="username" placeholder="아이디" />
+    <input type="password" id="password" placeholder="비밀번호" />
+    <button onclick="login()">로그인</button>
+  </div>
+
+  <!-- To-do 앱 -->
+  <div id="todo-app" style="display: none;">
+    <h3 id="greeting"></h3>
+    <button onclick="logout()">로그아웃</button>
+
+    <h4>할 일 목록</h4>
+    <input type="text" id="todo-input" placeholder="할 일을 입력하세요" />
+    <button onclick="addTodo()">추가</button>
+    <ul id="todo-list"></ul>
+  </div>
+
+  <script>
+    // 회원가입 기능
+    function register() {
+      const nickname = document.getElementById("reg-nickname").value.trim();
+      const username = document.getElementById("reg-username").value.trim();
+      const password = document.getElementById("reg-password").value.trim();
+
+      if (!username || !password || !nickname) {
+        alert("닉네임, 아이디, 비밀번호를 모두 입력하세요.");
+        return;
+      }
+
+      const users = JSON.parse(localStorage.getItem("users") || "{}");
+      if (users[username]) {
+        alert("이미 존재하는 아이디입니다.");
+        return;
+      }
+
+      users[username] = { password, nickname };
+      localStorage.setItem("users", JSON.stringify(users));
+      alert("회원가입이 완료되었습니다. 이제 로그인하세요.");
+
+      document.getElementById("reg-nickname").value = "";
+      document.getElementById("reg-username").value = "";
+      document.getElementById("reg-password").value = "";
+    }
+
+    // 로그인 기능
+    function login() {
+      const username = document.getElementById("username").value.trim();
+      const password = document.getElementById("password").value.trim();
+      const users = JSON.parse(localStorage.getItem("users") || "{}");
+
+      if (users[username] && users[username].password === password) {
+        localStorage.setItem("loggedInUser", username);
+        localStorage.setItem("loggedInNickname", users[username].nickname);
+        showTodoApp();
+      } else {
+        alert("아이디 또는 비밀번호가 일치하지 않습니다.");
+      }
+    }
+
+    // 로그아웃 기능
+    function logout() {
+      localStorage.removeItem("loggedInUser");
+      localStorage.removeItem("loggedInNickname");
+      showLoginForm();
+    }
+
+    // 로그인 후 To-do 앱 보여주기
+    function showTodoApp() {
+      const user = localStorage.getItem("loggedInUser");
+      const nickname = localStorage.getItem("loggedInNickname");
+      if (!user || !nickname) return;
+
+      document.getElementById("greeting").textContent = `${nickname}님 환영합니다!`;
+      document.getElementById("register-form").style.display = "none";
+      document.getElementById("login-form").style.display = "none";
+      document.getElementById("todo-app").style.display = "block";
+      loadTodos(user);
+    }
+
+    // 로그인/회원가입 폼 보여주기
+    function showLoginForm() {
+      document.getElementById("register-form").style.display = "block";
+      document.getElementById("login-form").style.display = "block";
+      document.getElementById("todo-app").style.display = "none";
+    }
+
+    // To-do 추가
+    function addTodo() {
+      const user = localStorage.getItem("loggedInUser");
+      const input = document.getElementById("todo-input");
+      const text = input.value.trim();
+      if (!text) return;
+
+      let todos = JSON.parse(localStorage.getItem(`todos_${user}`)) || [];
+      todos.push(text);
+      localStorage.setItem(`todos_${user}`, JSON.stringify(todos));
+      input.value = "";
+      loadTodos(user);
+    }
+
+    // To-do 불러오기
+    function loadTodos(user) {
+      const list = document.getElementById("todo-list");
+      list.innerHTML = "";
+      const todos = JSON.parse(localStorage.getItem(`todos_${user}`)) || [];
+
+      todos.forEach((todo) => {
+        const li = document.createElement("li");
+        li.textContent = todo;
+        list.appendChild(li);
+      });
+    }
+
+    // 페이지 로딩 시 로그인 상태 확인
+    window.onload = () => {
+      const user = localStorage.getItem("loggedInUser");
+      const nickname = localStorage.getItem("loggedInNickname");
+      if (user && nickname) {
+        showTodoApp();
+      }
+    };
+  </script>
+
+</body>
+</html>
